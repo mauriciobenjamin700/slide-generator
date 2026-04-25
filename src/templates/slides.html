@@ -10,6 +10,7 @@
 <body class="theme-{{ theme }}">
 <div class="deck">
 {% for slide in deck.slides %}
+<div class="slide-frame">
 <section class="slide slide--{{ slide.kind.value }}" data-number="{{ slide.slide_number }}">
     {% if slide.kind.value == "lesson_title" %}
         <div class="slide__inner slide__inner--center">
@@ -60,6 +61,7 @@
         <span class="slide__footer-number">{{ slide.slide_number }} / {{ deck.total }}</span>
     </footer>
 </section>
+</div>
 {% endfor %}
 </div>
 </body>
