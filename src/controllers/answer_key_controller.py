@@ -11,7 +11,9 @@ from src.services import (
 
 
 class AnswerKeyController:
-    """Coordinate parsing, HTML rendering and PDF generation for answer keys."""
+    """
+    Coordinate parsing, HTML rendering and PDF generation for answer keys.
+    """
 
     def __init__(
         self,

@@ -48,7 +48,7 @@ def _strip_prefix(line: str, prefixes: tuple[str, ...]) -> str | None:
     lowered: str = line.lower()
     for prefix in prefixes:
         if lowered.startswith(prefix):
-            return line[len(prefix):].strip()
+            return line[len(prefix) :].strip()
     return None
 
 
@@ -154,7 +154,8 @@ class AnswerKeyParserService:
                 continue
 
             subtitle_value: str | None = _strip_prefix(
-                line, SUBTITLE_PREFIXES,
+                line,
+                SUBTITLE_PREFIXES,
             )
             if subtitle_value is not None:
                 flush_qa()
