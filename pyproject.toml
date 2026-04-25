@@ -1,0 +1,69 @@
+[project]
+name = "slide-generator"
+version = "0.1.0"
+description = "Web tool to generate HTML slides from structured text and export them to PDF."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "jinja2>=3.1.4",
+    "weasyprint>=63.0",
+    "python-multipart>=0.0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.27.0",
+    "black>=25.1.0",
+    "isort>=6.0.1",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.25.3",
+    "ruff>=0.11.2",
+]
+
+
+[tool.ruff]
+lint.select = [
+    "F401",  # Remove imports não utilizados
+    "I001",  # Imports devem estar em ordem alfabética
+    "E501",  # Linha não pode exceder o limite de caracteres
+    "ANN001",  # Parâmetros de função devem ser tipados
+    "ANN002",  # *args deve ser tipado
+    "ANN003",  # **kwargs deve ser tipado
+    "ANN201",  # Funções públicas devem ter tipo de retorno
+    "ANN202",  # Métodos públicos devem ter tipo de retorno
+    "N802",  # Nomes de métodos devem ser snake_case
+    "N803",  # Nomes de variáveis devem ser snake_case
+    "N806",  # Nomes de constantes devem ser UPPER_CASE
+    "E302",  # Exige 2 linhas em branco antes de funções e classes
+    "E305",  # Exige 2 linhas em branco após o final de uma classe ou função
+    "D101",  # Classes públicas devem ter docstring
+    "D102",  # Métodos públicos devem ter docstring
+    "D103",  # Funções públicas devem ter docstring
+    "COM812",  # Trailing comma obrigatória em construções multi-line
+]
+line-length = 79
+preview = true
+
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 79
+
+[tool.black]
+line-length = 79
+skip-string-normalization = false
+
+[dependency-groups]
+dev = [
+    "black>=26.3.1",
+    "isort>=8.0.1",
+    "ruff>=0.15.12",
+]

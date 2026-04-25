@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slide Generator</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__brand">
+        <span class="topbar__logo">SG</span>
+        <div class="topbar__titles">
+            <h1 class="topbar__title">Slide Generator</h1>
+            <p class="topbar__subtitle">Cole seu texto estruturado e gere slides em HTML e PDF.</p>
+        </div>
+    </div>
+    <div class="topbar__actions">
+        <label class="select">
+            <span>Tema</span>
+            <select id="theme-select">
+                <option value="default" selected>Claro</option>
+                <option value="dark">Escuro</option>
+            </select>
+        </label>
+        <button id="btn-load-sample" class="btn btn--ghost" type="button">Exemplo</button>
+    </div>
+</header>
+
+<main class="layout">
+    <section class="panel panel--input">
+        <div class="panel__header">
+            <h2 class="panel__title">Texto de entrada</h2>
+            <span id="char-count" class="panel__hint">0 caracteres</span>
+        </div>
+        <label class="field">
+            <span class="field__label">Título do deck (opcional)</span>
+            <input id="deck-title" type="text" placeholder="Deixe em branco para usar o título da primeira aula">
+        </label>
+        <textarea
+            id="text-input"
+            class="textarea"
+            placeholder="Cole seu conteúdo aqui. Use 'Aula N: Título' para iniciar cada aula, títulos curtos para seções e 'Termo: descrição' para bullets."
+            spellcheck="false"
+        ></textarea>
+        <div class="panel__footer">
+            <button id="btn-preview" class="btn btn--primary" type="button">Gerar pré-visualização</button>
+            <button id="btn-pdf" class="btn btn--accent" type="button" disabled>Baixar PDF</button>
+            <span id="status" class="status"></span>
+        </div>
+    </section>
+
+    <section class="panel panel--preview">
+        <div class="panel__header">
+            <h2 class="panel__title">Pré-visualização</h2>
+            <span id="slide-count" class="panel__hint">Nenhum slide gerado</span>
+        </div>
+        <div class="preview-frame">
+            <iframe id="preview-iframe" title="Preview" sandbox="allow-same-origin"></iframe>
+            <div id="preview-empty" class="preview-empty">
+                <p>A pré-visualização aparecerá aqui após você gerar os slides.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
