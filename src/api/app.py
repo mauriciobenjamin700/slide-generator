@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from src.api.routers import slides_router
+from src.api.routers import answer_keys_router, slides_router
 from src.core import settings
 
 
@@ -32,6 +32,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(slides_router)
+    app.include_router(answer_keys_router)
 
     app.mount(
         "/static",

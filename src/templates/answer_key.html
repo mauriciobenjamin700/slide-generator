@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>{{ answer_key.title }}</title>
+<style>
+{{ answer_key_styles | safe }}
+</style>
+</head>
+<body class="theme-{{ theme }}">
+<div class="document">
+    <div class="document__header">
+        <h1 class="document__title">{{ answer_key.title }}</h1>
+        {% if answer_key.subtitle %}
+        <p class="document__subtitle">{{ answer_key.subtitle }}</p>
+        {% endif %}
+    </div>
+
+    {% for section in answer_key.sections %}
+    <section class="section">
+        {% if section.title %}
+        <h2 class="section__title">{{ section.title }}</h2>
+        {% endif %}
+        {% for item in section.items %}
+        <div class="item">
+            <span class="item__question">{{ item.question | safe }}</span>
+            <span class="item__answer">
+                <span class="item__answer-label">Resposta:</span>
+                {{ item.answer | safe }}
+            </span>
+        </div>
+        {% endfor %}
+    </section>
+    {% endfor %}
+
+    <div class="document__footer">
+        Documento gerado para apoio pedagógico.
+    </div>
+</div>
+</body>
+</html>

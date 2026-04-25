@@ -1,3 +1,10 @@
+from src.schemas.answer_key import (
+    AnswerKeyItemSchema,
+    AnswerKeySchema,
+    AnswerKeySectionSchema,
+    GenerateAnswerKeyRequestSchema,
+    GenerateAnswerKeyResponseSchema,
+)
 from src.schemas.slide import (
     BulletItemSchema,
     GenerateSlidesRequestSchema,
@@ -8,7 +15,12 @@ from src.schemas.slide import (
 )
 
 __all__: list[str] = [
+    "AnswerKeyItemSchema",
+    "AnswerKeySchema",
+    "AnswerKeySectionSchema",
     "BulletItemSchema",
+    "GenerateAnswerKeyRequestSchema",
+    "GenerateAnswerKeyResponseSchema",
     "GenerateSlidesRequestSchema",
     "GenerateSlidesResponseSchema",
     "SlideDeckSchema",

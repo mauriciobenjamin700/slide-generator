@@ -12,53 +12,110 @@
         <span class="topbar__logo">SG</span>
         <div class="topbar__titles">
             <h1 class="topbar__title">Slide Generator</h1>
-            <p class="topbar__subtitle">Cole seu texto estruturado e gere slides em HTML e PDF.</p>
+            <p class="topbar__subtitle">Gere slides ou gabaritos a partir de texto estruturado.</p>
         </div>
     </div>
-    <div class="topbar__actions">
-        <label class="select">
-            <span>Tema</span>
-            <select id="theme-select">
-                <option value="default" selected>Claro</option>
-                <option value="dark">Escuro</option>
-            </select>
-        </label>
-        <button id="btn-load-sample" class="btn btn--ghost" type="button">Exemplo</button>
-    </div>
+    <nav class="tabs" role="tablist">
+        <button id="tab-slides" class="tab tab--active" type="button" role="tab" aria-selected="true">Slides</button>
+        <button id="tab-answer-key" class="tab" type="button" role="tab" aria-selected="false">Gabarito</button>
+    </nav>
 </header>
 
-<main class="layout">
-    <section class="panel panel--input">
-        <div class="panel__header">
-            <h2 class="panel__title">Texto de entrada</h2>
-            <span id="char-count" class="panel__hint">0 caracteres</span>
+<main>
+    <section id="view-slides" class="layout view view--active">
+        <div class="panel panel--input">
+            <div class="panel__header">
+                <h2 class="panel__title">Texto de entrada</h2>
+                <span id="slides-char-count" class="panel__hint">0 caracteres</span>
+            </div>
+            <div class="panel__controls">
+                <label class="field">
+                    <span class="field__label">Título do deck (opcional)</span>
+                    <input id="deck-title" type="text" placeholder="Deixe em branco para usar o título da primeira aula">
+                </label>
+                <label class="select select--inline">
+                    <span class="field__label">Tema</span>
+                    <select id="slides-theme">
+                        <option value="default" selected>Claro</option>
+                        <option value="dark">Escuro</option>
+                    </select>
+                </label>
+            </div>
+            <textarea
+                id="slides-input"
+                class="textarea"
+                placeholder="Cole seu conteúdo aqui. Use 'Aula N: Título' para iniciar cada aula, títulos curtos para seções e 'Termo: descrição' para bullets."
+                spellcheck="false"
+            ></textarea>
+            <div class="panel__footer">
+                <button id="slides-btn-preview" class="btn btn--primary" type="button">Gerar pré-visualização</button>
+                <button id="slides-btn-pdf" class="btn btn--accent" type="button" disabled>Baixar PDF</button>
+                <button id="slides-btn-sample" class="btn btn--ghost btn--ghost-light" type="button">Exemplo</button>
+                <span id="slides-status" class="status"></span>
+            </div>
         </div>
-        <label class="field">
-            <span class="field__label">Título do deck (opcional)</span>
-            <input id="deck-title" type="text" placeholder="Deixe em branco para usar o título da primeira aula">
-        </label>
-        <textarea
-            id="text-input"
-            class="textarea"
-            placeholder="Cole seu conteúdo aqui. Use 'Aula N: Título' para iniciar cada aula, títulos curtos para seções e 'Termo: descrição' para bullets."
-            spellcheck="false"
-        ></textarea>
-        <div class="panel__footer">
-            <button id="btn-preview" class="btn btn--primary" type="button">Gerar pré-visualização</button>
-            <button id="btn-pdf" class="btn btn--accent" type="button" disabled>Baixar PDF</button>
-            <span id="status" class="status"></span>
+
+        <div class="panel panel--preview">
+            <div class="panel__header">
+                <h2 class="panel__title">Pré-visualização</h2>
+                <span id="slides-count" class="panel__hint">Nenhum slide gerado</span>
+            </div>
+            <div class="preview-frame">
+                <iframe id="slides-iframe" title="Preview de slides" sandbox="allow-same-origin"></iframe>
+                <div id="slides-empty" class="preview-empty">
+                    <p>A pré-visualização aparecerá aqui após você gerar os slides.</p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <section class="panel panel--preview">
-        <div class="panel__header">
-            <h2 class="panel__title">Pré-visualização</h2>
-            <span id="slide-count" class="panel__hint">Nenhum slide gerado</span>
+    <section id="view-answer-key" class="layout view">
+        <div class="panel panel--input">
+            <div class="panel__header">
+                <h2 class="panel__title">Texto do gabarito</h2>
+                <span id="ak-char-count" class="panel__hint">0 caracteres</span>
+            </div>
+            <div class="panel__controls">
+                <label class="field">
+                    <span class="field__label">Título (opcional)</span>
+                    <input id="ak-title" type="text" placeholder="Sobrescreve a linha 'Título:' do texto">
+                </label>
+                <label class="field">
+                    <span class="field__label">Subtítulo (opcional)</span>
+                    <input id="ak-subtitle" type="text" placeholder="Sobrescreve a linha 'Subtítulo:' do texto">
+                </label>
+                <label class="select select--inline">
+                    <span class="field__label">Tema</span>
+                    <select id="ak-theme">
+                        <option value="default" selected>Claro</option>
+                        <option value="dark">Escuro</option>
+                    </select>
+                </label>
+            </div>
+            <textarea
+                id="ak-input"
+                class="textarea"
+                placeholder="Use 'Título:' e 'Subtítulo:' para o cabeçalho. Use 'Parte 1: ...' para seções, '1. Pergunta' para questões e 'R: Resposta' para respostas."
+                spellcheck="false"
+            ></textarea>
+            <div class="panel__footer">
+                <button id="ak-btn-preview" class="btn btn--primary" type="button">Gerar pré-visualização</button>
+                <button id="ak-btn-pdf" class="btn btn--accent" type="button" disabled>Baixar PDF</button>
+                <button id="ak-btn-sample" class="btn btn--ghost btn--ghost-light" type="button">Exemplo</button>
+                <span id="ak-status" class="status"></span>
+            </div>
         </div>
-        <div class="preview-frame">
-            <iframe id="preview-iframe" title="Preview" sandbox="allow-same-origin"></iframe>
-            <div id="preview-empty" class="preview-empty">
-                <p>A pré-visualização aparecerá aqui após você gerar os slides.</p>
+
+        <div class="panel panel--preview">
+            <div class="panel__header">
+                <h2 class="panel__title">Pré-visualização</h2>
+                <span id="ak-count" class="panel__hint">Nenhuma questão gerada</span>
+            </div>
+            <div class="preview-frame">
+                <iframe id="ak-iframe" title="Preview do gabarito" sandbox="allow-same-origin"></iframe>
+                <div id="ak-empty" class="preview-empty">
+                    <p>A pré-visualização aparecerá aqui após você gerar o gabarito.</p>
+                </div>
             </div>
         </div>
     </section>

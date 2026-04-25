@@ -84,25 +84,72 @@ html, body {
     gap: 12px;
 }
 
+.tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.tab {
+    background: transparent;
+    color: rgba(248, 250, 252, 0.7);
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.tab:hover:not(.tab--active) {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f8fafc;
+}
+
+.tab--active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+}
+
+.view {
+    display: none;
+}
+
+.view--active {
+    display: grid;
+}
+
 .select {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: rgba(248, 250, 252, 0.85);
+    color: var(--text);
     font-size: 13px;
 }
 
 .select select {
-    background: rgba(255, 255, 255, 0.08);
-    color: #f8fafc;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    padding: 6px 10px;
+    background: var(--panel-soft);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
     border-radius: 8px;
     font-size: 13px;
+    font-family: inherit;
+}
+
+.select--inline {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
 }
 
 .layout {
-    display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
     gap: 24px;
     padding: 0 36px 36px 36px;
@@ -148,6 +195,19 @@ html, body {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+}
+
+.panel__controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+}
+
+@media (max-width: 700px) {
+    .panel__controls {
+        grid-template-columns: 1fr;
+    }
 }
 
 .field {
@@ -241,6 +301,16 @@ html, body {
 
 .btn--ghost:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.18);
+}
+
+.btn--ghost-light {
+    background: var(--panel-soft);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn--ghost-light:hover:not(:disabled) {
+    background: var(--accent-soft);
 }
 
 .status {

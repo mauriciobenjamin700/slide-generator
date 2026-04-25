@@ -1,4 +1,4 @@
-const SAMPLE_TEXT = `Aula 1: Fundamentos da Lógica Digital e Portas Lógicas
+const SLIDES_SAMPLE = `Aula 1: Fundamentos da Lógica Digital e Portas Lógicas
 Introdução ao Pensamento Binário
 A eletrônica digital baseia-se na ideia de que toda informação pode ser representada por apenas dois estados: Ligado (1) ou Desligado (0). No nível do hardware, esses estados são representados por níveis de tensão (geralmente 0V para o nível baixo e 5V ou 3.3V para o nível alto). Diferente da eletrônica analógica, onde a tensão varia continuamente, a digital ignora pequenas variações, o que torna os sistemas muito mais imunes a ruídos.
 
@@ -11,151 +11,284 @@ Porta AND (E): Imagine um circuito com dois interruptores em série. A lâmpada 
 
 Porta OR (OU): Funciona como dois interruptores em paralelo. A lâmpada acende se o primeiro OU o segundo (ou ambos) estiverem fechados. Basta uma entrada ser 1 para a saída ser 1.
 
-Portas Derivadas e Lógica Combinacional
-A partir das básicas, criamos portas como a NAND (o inverso da AND) e a NOR (o inverso da OR). Uma porta muito importante para o curso é a XOR (OU Exclusivo), que é usada em circuitos de soma aritmética: a saída é 1 apenas se as entradas forem diferentes entre si. Se ambas forem iguais (0 e 0 ou 1 e 1), a saída será 0.
-
-Aula 2: Conversores Analógico-Digitais (ADC) e Digital-Analógicos (DAC)
-A Ponte entre dois Mundos
-O mundo real é analógico: a temperatura não pula de 20°C para 21°C; ela passa por todos os valores intermediários. Porém, o computador só entende números binários. Os conversores são os tradutores dessa comunicação.
-
-Conversor Analógico-Digital (ADC)
-O processo de transformar uma tensão (ex: vinda de um microfone) em um número binário envolve três etapas principais descritas para os alunos:
-
-Amostragem: O circuito tira "fotos" da tensão em intervalos de tempo muito curtos.
-
-Quantização: O valor da tensão é arredondado para o nível digital mais próximo disponível.
-
-Codificação: Esse nível é transformado em um código binário (ex: 1010).
-
 Conclusão da Unidade
 Ao final destas três aulas, o aluno deve ser capaz de entender que um sensor capta uma informação, o conversor traduz essa informação para o "idioma" do computador, e as portas lógicas tomam decisões baseadas nesses dados.`;
 
-const elements = {
-    textInput: document.getElementById("text-input"),
-    deckTitle: document.getElementById("deck-title"),
-    themeSelect: document.getElementById("theme-select"),
-    btnPreview: document.getElementById("btn-preview"),
-    btnPdf: document.getElementById("btn-pdf"),
-    btnSample: document.getElementById("btn-load-sample"),
-    iframe: document.getElementById("preview-iframe"),
-    previewEmpty: document.getElementById("preview-empty"),
-    status: document.getElementById("status"),
-    charCount: document.getElementById("char-count"),
-    slideCount: document.getElementById("slide-count"),
-};
+const ANSWER_KEY_SAMPLE = `Título: Gabarito de Eletrônica Digital e Sensores
+Subtítulo: Disciplina: Eletrônica Digital | 2º Ano Técnico
 
-let currentPreviewUrl = null;
+Parte 1: Portas Lógicas e Álgebra Booleana
 
-function setPreviewHtml(html) {
-    if (currentPreviewUrl) {
-        URL.revokeObjectURL(currentPreviewUrl);
-    }
-    const blob = new Blob([html], { type: "text/html" });
-    currentPreviewUrl = URL.createObjectURL(blob);
-    elements.iframe.src = currentPreviewUrl;
-}
+1. Explique a diferença fundamental entre um sinal analógico e um sinal digital.
+R: O sinal analógico é contínuo no tempo e pode assumir infinitos valores em uma faixa (ex: temperatura). O sinal digital é discreto, possuindo estados definidos (geralmente 0 e 1) e mudando em passos ou degraus.
 
-function setStatus(message, kind) {
-    elements.status.textContent = message;
-    elements.status.classList.remove("success", "error");
+2. Qual é a função da porta lógica NOT e como ela é representada em uma expressão booleana?
+R: Sua função é a inversão lógica. Se a entrada é 1, a saída é 0; se a entrada é 0, a saída é 1. É representada por uma barra sobre a variável (Y = <span class="overline">A</span>).
+
+3. Desenhe a tabela verdade para uma porta AND de duas entradas.
+R: Tabela: 0 e 0 = 0; 0 e 1 = 0; 1 e 0 = 0; 1 e 1 = 1. A saída será 1 somente quando todas as entradas forem 1 simultaneamente.
+
+Parte 2: Conversores (ADC e DAC)
+
+4. O que significa a sigla ADC e qual a sua importância para sistemas baseados em microcontroladores?
+R: ADC (Analog-to-Digital Converter) é o conversor analógico-digital. Ele permite que o microcontrolador "leia" grandezas do mundo real e as transforme em números binários processáveis.
+
+5. Se um ADC de 10 bits possui referência de 5V, qual é o valor aproximado da sua resolução?
+R: Resolução = 5V / (2^10) = 5V / 1024 ≈ 4,88 mV.`;
+
+function setStatus(node, message, kind) {
+    node.textContent = message;
+    node.classList.remove("success", "error");
     if (kind) {
-        elements.status.classList.add(kind);
+        node.classList.add(kind);
     }
 }
 
-function updateCharCount() {
-    const length = elements.textInput.value.length;
-    elements.charCount.textContent = `${length.toLocaleString("pt-BR")} caracteres`;
+function updateCharCount(input, label) {
+    const length = input.value.length;
+    label.textContent = `${length.toLocaleString("pt-BR")} caracteres`;
 }
 
-function buildPayload() {
-    return {
-        text: elements.textInput.value,
-        deck_title: elements.deckTitle.value.trim() || null,
-        theme: elements.themeSelect.value,
+function createPreviewBinder(iframe) {
+    let currentUrl = null;
+    return function setHtml(html) {
+        if (currentUrl) {
+            URL.revokeObjectURL(currentUrl);
+        }
+        const blob = new Blob([html], { type: "text/html" });
+        currentUrl = URL.createObjectURL(blob);
+        iframe.src = currentUrl;
     };
 }
 
-async function generatePreview() {
-    const text = elements.textInput.value.trim();
-    if (!text) {
-        setStatus("Cole algum texto antes de gerar.", "error");
-        return;
-    }
-    setStatus("Gerando pré-visualização...");
-    elements.btnPreview.disabled = true;
-    try {
-        const response = await fetch("/api/slides/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(buildPayload()),
-        });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: "Falha desconhecida." }));
-            throw new Error(error.detail || `HTTP ${response.status}`);
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+async function postJson(path, payload) {
+    const response = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+        let detail = `HTTP ${response.status}`;
+        try {
+            const error = await response.json();
+            if (error && error.detail) {
+                detail = error.detail;
+            }
+        } catch (_) {
+            // ignore JSON parse errors and keep the default detail
         }
-        const data = await response.json();
-        setPreviewHtml(data.html);
-        elements.previewEmpty.classList.add("hidden");
-        elements.btnPdf.disabled = false;
-        elements.slideCount.textContent = `${data.deck.slides.length} slides`;
-        setStatus(`Deck "${data.deck.title}" gerado com sucesso.`, "success");
-    } catch (error) {
-        setStatus(error.message || String(error), "error");
-    } finally {
-        elements.btnPreview.disabled = false;
+        throw new Error(detail);
     }
+    return response;
 }
 
-async function downloadPdf() {
-    const text = elements.textInput.value.trim();
-    if (!text) {
-        setStatus("Cole algum texto antes de gerar.", "error");
-        return;
+function setupSlides() {
+    const els = {
+        input: document.getElementById("slides-input"),
+        deckTitle: document.getElementById("deck-title"),
+        theme: document.getElementById("slides-theme"),
+        btnPreview: document.getElementById("slides-btn-preview"),
+        btnPdf: document.getElementById("slides-btn-pdf"),
+        btnSample: document.getElementById("slides-btn-sample"),
+        iframe: document.getElementById("slides-iframe"),
+        empty: document.getElementById("slides-empty"),
+        status: document.getElementById("slides-status"),
+        charCount: document.getElementById("slides-char-count"),
+        slideCount: document.getElementById("slides-count"),
+    };
+    const setHtml = createPreviewBinder(els.iframe);
+
+    function buildPayload() {
+        return {
+            text: els.input.value,
+            deck_title: els.deckTitle.value.trim() || null,
+            theme: els.theme.value,
+        };
     }
-    setStatus("Gerando PDF...");
-    elements.btnPdf.disabled = true;
-    try {
-        const response = await fetch("/api/slides/pdf", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(buildPayload()),
-        });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: "Falha desconhecida." }));
-            throw new Error(error.detail || `HTTP ${response.status}`);
+
+    async function generate() {
+        if (!els.input.value.trim()) {
+            setStatus(els.status, "Cole algum texto antes de gerar.", "error");
+            return;
         }
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "slides.pdf";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        setStatus("PDF gerado e baixado.", "success");
-    } catch (error) {
-        setStatus(error.message || String(error), "error");
-    } finally {
-        elements.btnPdf.disabled = false;
+        setStatus(els.status, "Gerando pré-visualização...");
+        els.btnPreview.disabled = true;
+        try {
+            const response = await postJson("/api/slides/generate", buildPayload());
+            const data = await response.json();
+            setHtml(data.html);
+            els.empty.classList.add("hidden");
+            els.btnPdf.disabled = false;
+            els.slideCount.textContent = `${data.deck.slides.length} slides`;
+            setStatus(els.status, `Deck "${data.deck.title}" gerado com sucesso.`, "success");
+        } catch (error) {
+            setStatus(els.status, error.message || String(error), "error");
+        } finally {
+            els.btnPreview.disabled = false;
+        }
     }
+
+    async function downloadPdf() {
+        if (!els.input.value.trim()) {
+            setStatus(els.status, "Cole algum texto antes de gerar.", "error");
+            return;
+        }
+        setStatus(els.status, "Gerando PDF...");
+        els.btnPdf.disabled = true;
+        try {
+            const response = await postJson("/api/slides/pdf", buildPayload());
+            const blob = await response.blob();
+            downloadBlob(blob, "slides.pdf");
+            setStatus(els.status, "PDF gerado e baixado.", "success");
+        } catch (error) {
+            setStatus(els.status, error.message || String(error), "error");
+        } finally {
+            els.btnPdf.disabled = false;
+        }
+    }
+
+    els.btnPreview.addEventListener("click", generate);
+    els.btnPdf.addEventListener("click", downloadPdf);
+    els.btnSample.addEventListener("click", () => {
+        els.input.value = SLIDES_SAMPLE;
+        updateCharCount(els.input, els.charCount);
+        setStatus(els.status, 'Exemplo carregado. Clique em "Gerar pré-visualização".');
+    });
+    els.input.addEventListener("input", () => updateCharCount(els.input, els.charCount));
+    els.theme.addEventListener("change", () => {
+        if (!els.btnPdf.disabled) {
+            generate();
+        }
+    });
+    updateCharCount(els.input, els.charCount);
 }
 
-function loadSample() {
-    elements.textInput.value = SAMPLE_TEXT;
-    updateCharCount();
-    setStatus("Exemplo carregado. Clique em \"Gerar pré-visualização\".");
+function setupAnswerKey() {
+    const els = {
+        input: document.getElementById("ak-input"),
+        title: document.getElementById("ak-title"),
+        subtitle: document.getElementById("ak-subtitle"),
+        theme: document.getElementById("ak-theme"),
+        btnPreview: document.getElementById("ak-btn-preview"),
+        btnPdf: document.getElementById("ak-btn-pdf"),
+        btnSample: document.getElementById("ak-btn-sample"),
+        iframe: document.getElementById("ak-iframe"),
+        empty: document.getElementById("ak-empty"),
+        status: document.getElementById("ak-status"),
+        charCount: document.getElementById("ak-char-count"),
+        itemCount: document.getElementById("ak-count"),
+    };
+    const setHtml = createPreviewBinder(els.iframe);
+
+    function buildPayload() {
+        return {
+            text: els.input.value,
+            title: els.title.value.trim() || null,
+            subtitle: els.subtitle.value.trim() || null,
+            theme: els.theme.value,
+        };
+    }
+
+    function totalItems(answerKey) {
+        return answerKey.sections.reduce((acc, s) => acc + s.items.length, 0);
+    }
+
+    async function generate() {
+        if (!els.input.value.trim()) {
+            setStatus(els.status, "Cole algum texto antes de gerar.", "error");
+            return;
+        }
+        setStatus(els.status, "Gerando pré-visualização...");
+        els.btnPreview.disabled = true;
+        try {
+            const response = await postJson("/api/answer-keys/generate", buildPayload());
+            const data = await response.json();
+            setHtml(data.html);
+            els.empty.classList.add("hidden");
+            els.btnPdf.disabled = false;
+            const total = totalItems(data.answer_key);
+            const sections = data.answer_key.sections.length;
+            els.itemCount.textContent = `${total} questões em ${sections} seção(ões)`;
+            setStatus(els.status, `Gabarito "${data.answer_key.title}" gerado com sucesso.`, "success");
+        } catch (error) {
+            setStatus(els.status, error.message || String(error), "error");
+        } finally {
+            els.btnPreview.disabled = false;
+        }
+    }
+
+    async function downloadPdf() {
+        if (!els.input.value.trim()) {
+            setStatus(els.status, "Cole algum texto antes de gerar.", "error");
+            return;
+        }
+        setStatus(els.status, "Gerando PDF...");
+        els.btnPdf.disabled = true;
+        try {
+            const response = await postJson("/api/answer-keys/pdf", buildPayload());
+            const blob = await response.blob();
+            downloadBlob(blob, "gabarito.pdf");
+            setStatus(els.status, "PDF gerado e baixado.", "success");
+        } catch (error) {
+            setStatus(els.status, error.message || String(error), "error");
+        } finally {
+            els.btnPdf.disabled = false;
+        }
+    }
+
+    els.btnPreview.addEventListener("click", generate);
+    els.btnPdf.addEventListener("click", downloadPdf);
+    els.btnSample.addEventListener("click", () => {
+        els.input.value = ANSWER_KEY_SAMPLE;
+        updateCharCount(els.input, els.charCount);
+        setStatus(els.status, 'Exemplo carregado. Clique em "Gerar pré-visualização".');
+    });
+    els.input.addEventListener("input", () => updateCharCount(els.input, els.charCount));
+    els.theme.addEventListener("change", () => {
+        if (!els.btnPdf.disabled) {
+            generate();
+        }
+    });
+    updateCharCount(els.input, els.charCount);
 }
 
-elements.btnPreview.addEventListener("click", generatePreview);
-elements.btnPdf.addEventListener("click", downloadPdf);
-elements.btnSample.addEventListener("click", loadSample);
-elements.textInput.addEventListener("input", updateCharCount);
-elements.themeSelect.addEventListener("change", () => {
-    if (!elements.btnPdf.disabled) {
-        generatePreview();
-    }
-});
+function setupTabs() {
+    const tabs = [
+        {
+            button: document.getElementById("tab-slides"),
+            view: document.getElementById("view-slides"),
+        },
+        {
+            button: document.getElementById("tab-answer-key"),
+            view: document.getElementById("view-answer-key"),
+        },
+    ];
 
-updateCharCount();
+    function activate(target) {
+        tabs.forEach(({ button, view }) => {
+            const isActive = button === target;
+            button.classList.toggle("tab--active", isActive);
+            button.setAttribute("aria-selected", isActive ? "true" : "false");
+            view.classList.toggle("view--active", isActive);
+        });
+    }
+
+    tabs.forEach(({ button }) => {
+        button.addEventListener("click", () => activate(button));
+    });
+}
+
+setupTabs();
+setupSlides();
+setupAnswerKey();

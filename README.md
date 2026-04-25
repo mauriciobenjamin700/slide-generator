@@ -1,10 +1,13 @@
 # Slide Generator
 
-Ferramenta web para transformar textos pedagógicos estruturados em slides HTML
-e exportá-los como PDF. Construída com FastAPI, Pydantic v2, Jinja2 e WeasyPrint,
-seguindo arquitetura em camadas (router → controller → service).
+Ferramenta web para transformar textos pedagógicos estruturados em **slides
+HTML** ou **gabaritos** e exportá-los como PDF. Construída com FastAPI,
+Pydantic v2, Jinja2 e WeasyPrint, seguindo arquitetura em camadas
+(router → controller → service).
 
 ## Funcionalidades
+
+### Slides
 
 - Parser que reconhece automaticamente:
   - **Aula N: Título** → slide de capa com numeração da aula
@@ -15,7 +18,27 @@ seguindo arquitetura em camadas (router → controller → service).
   - Linhas de ruído (Shutterstock, Explorar etc.) são descartadas
 - Pré-visualização HTML em iframe com tema claro/escuro
 - Exportação para PDF (1280×720, uma página por slide)
-- API REST com três endpoints: `/api/slides/generate`, `/api/slides/preview`, `/api/slides/pdf`
+- API REST: `/api/slides/generate`, `/api/slides/preview`, `/api/slides/pdf`
+
+### Gabaritos
+
+- Parser que reconhece:
+  - **Título:** e **Subtítulo:** para o cabeçalho do documento
+  - **Parte N: ...**, **Seção ...**, **Capítulo ...** ou qualquer linha que se
+    pareça com um cabeçalho → cria uma nova seção
+  - **`1.`** ou **`1)`** no início da linha → nova questão
+  - **`R:`** ou **`Resposta:`** → resposta da questão anterior
+  - Continuações em múltiplas linhas são juntadas automaticamente
+- HTML inline com CSS dedicado, suporta inline HTML (ex.:
+  `<span class="overline">A</span>` para barra de inversão booleana)
+- Exportação para PDF A4 com codificação UTF-8 correta
+- API REST: `/api/answer-keys/generate`, `/api/answer-keys/preview`,
+  `/api/answer-keys/pdf`
+
+### Interface
+
+Frontend single-page com **abas** que alternam entre os dois geradores. Cada
+aba traz seu próprio campo de texto, controles e pré-visualização em iframe.
 
 ## Estrutura
 
@@ -87,6 +110,28 @@ Mesmo payload, retorna apenas `text/html` para uso direto em iframe.
 
 Mesmo payload, retorna `application/pdf` com `Content-Disposition: attachment`.
 
+### POST `/api/answer-keys/generate`
+
+Gera o JSON estruturado e o HTML completo do gabarito.
+
+```json
+{
+  "text": "Título: ...\nSubtítulo: ...\n\nParte 1: ...\n\n1. Pergunta?\nR: Resposta.",
+  "title": null,
+  "subtitle": null,
+  "theme": "default"
+}
+```
+
+### POST `/api/answer-keys/preview`
+
+Mesmo payload, retorna apenas `text/html` para uso direto em iframe.
+
+### POST `/api/answer-keys/pdf`
+
+Mesmo payload, retorna `application/pdf` com `Content-Disposition: attachment`
+(`gabarito.pdf`).
+
 ## Testes
 
 ```bash
@@ -96,6 +141,8 @@ pytest
 ```
 
 ## Formato de entrada esperado
+
+### Entrada de slides
 
 ```text
 Aula 1: Título da Aula
@@ -120,11 +167,42 @@ Heurísticas usadas:
 - Linhas no formato `Termo: descrição` viram bullets se o termo tiver até 8 palavras, parênteses balanceados e nenhum verbo de ligação (é, são, foi…)
 - Demais linhas são tratadas como parágrafos
 
-## Prompt para gerar conteúdo com IA
+### Entrada de gabarito
 
-Cole o prompt abaixo em qualquer assistente (ChatGPT, Claude, Gemini, Copilot…)
-substituindo `[TEMA]` pelo assunto desejado. A saída poderá ser colada
-diretamente na ferramenta sem nenhum ajuste.
+```text
+Título: Gabarito de Eletrônica Digital e Sensores
+Subtítulo: Disciplina: Eletrônica Digital | 2º Ano Técnico
+
+Parte 1: Portas Lógicas e Álgebra Booleana
+
+1. Explique a diferença entre sinal analógico e digital.
+R: O sinal analógico é contínuo no tempo e pode assumir infinitos valores. O digital é discreto.
+
+2. Qual é a função da porta lógica NOT?
+R: Inverte a entrada. Representada por uma barra: Y = <span class="overline">A</span>.
+
+Parte 2: Conversores (ADC e DAC)
+
+8. O que significa a sigla ADC?
+R: Analog-to-Digital Converter. Resolução ≈ 4,88 mV em 10 bits / 5V.
+```
+
+Heurísticas usadas:
+
+- `Título:` e `Subtítulo:` (sem distinção entre maiúsculas/minúsculas) populam o cabeçalho do documento
+- Linhas iniciadas por `<número>.` ou `<número>)` viram novas questões; o número é mantido como parte do texto
+- `R:`, `Resposta:`, `A:` ou `Answer:` (case-insensitive) iniciam a resposta da última questão
+- Linhas que não casam com nenhum padrão acima e parecem cabeçalhos curtos abrem uma nova seção
+- Linhas em continuação (sem prefixo) são juntadas com espaço à pergunta ou resposta corrente
+- HTML inline (ex.: `<span class="overline">A</span>`, `<strong>`) é renderizado direto — útil para notação booleana e ênfase
+
+## Prompts para gerar conteúdo com IA
+
+Cole o prompt apropriado em qualquer assistente (ChatGPT, Claude, Gemini,
+Copilot…) substituindo os placeholders entre colchetes pelo conteúdo
+desejado. A saída poderá ser colada diretamente na ferramenta sem ajustes.
+
+### Prompt para slides
 
 ````text
 Você é um assistente que produz roteiros de slides em texto puro. Sua saída
@@ -193,6 +271,74 @@ TAREFA
 
 Gere agora um roteiro de slides sobre: [TEMA]
 Quantidade de aulas: [N]
+Público-alvo: [DESCRIÇÃO DO PÚBLICO]
+
+Retorne apenas o texto formatado conforme as regras acima. Nada mais.
+````
+
+### Prompt para gabarito
+
+````text
+Você é um assistente que produz gabaritos de exercícios em texto puro. Sua
+saída será processada por um parser automático que segue regras estritas —
+siga-as com precisão. Não use Markdown (asteriscos, hífens de bullet,
+crases, blocos de código), nem emojis. Devolva APENAS o texto bruto no
+formato abaixo.
+
+REGRAS DE FORMATAÇÃO
+
+1. As duas primeiras linhas devem ser, nesta ordem:
+   Título: [Título do gabarito]
+   Subtítulo: [Disciplina, ano, turma — informações curtas separadas por |]
+
+2. Agrupe as questões em seções. Cada seção começa com uma linha de
+   cabeçalho do tipo:
+   Parte N: Título da Parte
+   (também aceitos: "Seção N:", "Capítulo N:", "Módulo N:"). Deixe uma linha
+   em branco antes e depois do cabeçalho.
+
+3. Cada questão é um par de duas linhas separado por uma linha em branco
+   das próximas:
+   N. Texto da pergunta terminando em ponto final ou interrogação.
+   R: Texto da resposta terminando em ponto final.
+
+   Onde N é a numeração contínua (1, 2, 3, ...) ao longo de todo o
+   documento, NÃO reiniciando a cada seção.
+
+4. Para notação booleana com barra de inversão sobre uma variável, use
+   exatamente: <span class="overline">A</span>
+   (substitua "A" pela variável correspondente). NÃO use combinações de
+   caracteres Unicode como A̅, pois não renderizam bem em PDF.
+
+5. Não use Markdown nem outros tags HTML além de <span class="overline">.
+   Símbolos matemáticos comuns como ·, ≈, →, ², ³ podem ser usados
+   diretamente.
+
+6. Cada resposta deve ser objetiva: 1 a 4 frases, sem listas internas.
+
+EXEMPLO DE SAÍDA VÁLIDA
+
+Título: Gabarito de Eletrônica Digital e Sensores
+Subtítulo: Disciplina: Eletrônica Digital | 2º Ano Técnico
+
+Parte 1: Portas Lógicas e Álgebra Booleana
+
+1. Explique a diferença fundamental entre um sinal analógico e um sinal digital.
+R: O sinal analógico é contínuo no tempo e pode assumir infinitos valores em uma faixa. O digital é discreto, possuindo estados definidos (0 e 1).
+
+2. Qual é a função da porta lógica NOT e como ela é representada?
+R: Sua função é a inversão lógica. É representada por uma barra sobre a variável: Y = <span class="overline">A</span>.
+
+Parte 2: Conversores (ADC e DAC)
+
+3. O que significa a sigla ADC?
+R: Analog-to-Digital Converter. Converte uma grandeza analógica em um número binário processável pelo microcontrolador.
+
+TAREFA
+
+Gere agora um gabarito sobre: [TEMA]
+Quantidade total de questões: [N]
+Quantidade de seções/partes: [M]
 Público-alvo: [DESCRIÇÃO DO PÚBLICO]
 
 Retorne apenas o texto formatado conforme as regras acima. Nada mais.
