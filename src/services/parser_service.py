@@ -2,9 +2,17 @@ import re
 from dataclasses import dataclass, field
 
 from src.core import EmptyInputError, TextTooLargeError, settings
-from src.schemas import BulletItem, SlideDeckSchema, SlideKind, SlideSchema
+from src.schemas import (
+    BulletItemSchema,
+    SlideDeckSchema,
+    SlideKind,
+    SlideSchema,
+)
 
-LESSON_RE: re.Pattern[str] = re.compile(r"^Aula\s+(\d+)\s*:\s*(.+?)\s*$", re.IGNORECASE)
+LESSON_RE: re.Pattern[str] = re.compile(
+    r"^Aula\s+(\d+)\s*:\s*(.+?)\s*$",
+    re.IGNORECASE,
+)
 
 JUNK_LINES: set[str] = {
     "shutterstock",
@@ -53,7 +61,7 @@ class _Section:
 
     title: str
     paragraphs: list[str] = field(default_factory=list)
-    bullets: list[BulletItem] = field(default_factory=list)
+    bullets: list[BulletItemSchema] = field(default_factory=list)
 
 
 @dataclass
@@ -84,7 +92,8 @@ def _try_parse_bullet(line: str) -> tuple[str, str] | None:
         line: A single, trimmed line of text.
 
     Returns:
-        A `(term, description)` pair when the line looks like a bullet, else None.
+        A `(term, description)` pair when the line looks like a bullet,
+        else None.
     """
     if ":" not in line:
         return None
@@ -120,7 +129,10 @@ def _looks_like_section(line: str) -> bool:
     Returns:
         True if the line resembles a short, capitalized heading.
     """
-    if len(line) > MAX_SECTION_TITLE_LENGTH or len(line) < MIN_SECTION_TITLE_LENGTH:
+    if (
+        len(line) > MAX_SECTION_TITLE_LENGTH
+        or len(line) < MIN_SECTION_TITLE_LENGTH
+    ):
         return False
     if line[-1] in ".!,;:":
         return False
@@ -145,7 +157,10 @@ def _chunk_paragraphs(paragraphs: list[str]) -> list[list[str]]:
     current_chars: int = 0
     for paragraph in paragraphs:
         paragraph_length: int = len(paragraph)
-        if current and current_chars + paragraph_length > MAX_CHARS_PER_CONTENT_SLIDE:
+        if (
+            current
+            and current_chars + paragraph_length > MAX_CHARS_PER_CONTENT_SLIDE
+        ):
             chunks.append(current)
             current = []
             current_chars = 0
@@ -156,7 +171,9 @@ def _chunk_paragraphs(paragraphs: list[str]) -> list[list[str]]:
     return chunks
 
 
-def _chunk_bullets(bullets: list[BulletItem]) -> list[list[BulletItem]]:
+def _chunk_bullets(
+    bullets: list[BulletItemSchema],
+) -> list[list[BulletItemSchema]]:
     """Split a list of bullets into groups that fit on a single slide.
 
     Args:
@@ -184,22 +201,26 @@ class SlideParserService:
         """Parse the given text into a deck of slides.
 
         Args:
-            text: The raw user-supplied text containing one or more `Aula N:` blocks.
-            deck_title: Optional override for the deck title. When omitted the title
-                is taken from the first lesson, or defaults to "Slides".
+            text: The raw user-supplied text containing one or more
+                `Aula N:` blocks.
+            deck_title: Optional override for the deck title. When
+                omitted the title is taken from the first lesson, or
+                defaults to "Slides".
 
         Returns:
             A fully populated `SlideDeckSchema` ready for HTML rendering.
 
         Raises:
             EmptyInputError: If the text is empty or whitespace only.
-            TextTooLargeError: If the text exceeds the configured maximum length.
+            TextTooLargeError: If the text exceeds the configured
+                maximum length.
         """
         if not text or not text.strip():
             raise EmptyInputError("Input text is empty.")
         if len(text) > settings.max_text_length:
             raise TextTooLargeError(
-                f"Input text exceeds the maximum of {settings.max_text_length} characters.",
+                "Input text exceeds the maximum of "
+                f"{settings.max_text_length} characters.",
             )
         lessons: list[_Lesson] = self._extract_lessons(text)
         slides: list[SlideSchema] = self._build_slides(lessons)
@@ -229,7 +250,9 @@ class SlideParserService:
                 current_section = _Section(title=current_lesson.title)
                 current_lesson.sections.append(current_section)
             if current_section is not None:
-                current_section.paragraphs.append(" ".join(paragraph_buffer).strip())
+                current_section.paragraphs.append(
+                    " ".join(paragraph_buffer).strip(),
+                )
             paragraph_buffer.clear()
 
         for raw in text.splitlines():
@@ -263,7 +286,7 @@ class SlideParserService:
                     current_section = _Section(title=current_lesson.title)
                     current_lesson.sections.append(current_section)
                 current_section.bullets.append(
-                    BulletItem(term=bullet[0], description=bullet[1]),
+                    BulletItemSchema(term=bullet[0], description=bullet[1]),
                 )
                 continue
 
@@ -303,7 +326,9 @@ class SlideParserService:
                     continue
                 is_conclusion: bool = "conclus" in section.title.lower()
                 paragraph_kind: SlideKind = (
-                    SlideKind.CONCLUSION if is_conclusion else SlideKind.CONTENT
+                    SlideKind.CONCLUSION
+                    if is_conclusion
+                    else SlideKind.CONTENT
                 )
                 for paragraph_chunk in _chunk_paragraphs(section.paragraphs):
                     slides.append(

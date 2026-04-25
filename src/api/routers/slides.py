@@ -4,20 +4,23 @@ from fastapi.responses import HTMLResponse, Response
 from src.api.dependencies import get_slide_controller
 from src.controllers import SlideController
 from src.core import EmptyInputError, PdfRenderError, TextTooLargeError
-from src.schemas import GenerateSlidesRequest, GenerateSlidesResponse
+from src.schemas import (
+    GenerateSlidesRequestSchema,
+    GenerateSlidesResponseSchema,
+)
 
 router: APIRouter = APIRouter(prefix="/api/slides", tags=["slides"])
 
 
 @router.post(
     "/generate",
-    response_model=GenerateSlidesResponse,
+    response_model=GenerateSlidesResponseSchema,
     summary="Parse text and return both the parsed deck and its HTML.",
 )
 async def generate_slides(
-    payload: GenerateSlidesRequest,
+    payload: GenerateSlidesRequestSchema,
     controller: SlideController = Depends(get_slide_controller),
-) -> GenerateSlidesResponse:
+) -> GenerateSlidesResponseSchema:
     """Parse the provided text into structured slides and render them as HTML.
 
     Args:
@@ -28,14 +31,21 @@ async def generate_slides(
         The parsed deck schema together with the rendered HTML document.
 
     Raises:
-        HTTPException: 422 when the text is empty or exceeds the maximum length.
+        HTTPException: 422 when the text is empty, 413 when it
+            exceeds the configured maximum length.
     """
     try:
         return await controller.generate(payload)
     except EmptyInputError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.message) from exc
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.message,
+        ) from exc
     except TextTooLargeError as exc:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=exc.message) from exc
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=exc.message,
+        ) from exc
 
 
 @router.post(
@@ -44,10 +54,10 @@ async def generate_slides(
     summary="Return only the rendered HTML preview of the deck.",
 )
 async def preview_slides(
-    payload: GenerateSlidesRequest,
+    payload: GenerateSlidesRequestSchema,
     controller: SlideController = Depends(get_slide_controller),
 ) -> HTMLResponse:
-    """Render the deck and return the raw HTML document for embedding in an iframe.
+    """Render the deck and return the raw HTML for an iframe preview.
 
     Args:
         payload: The text and rendering options sent by the client.
@@ -62,9 +72,15 @@ async def preview_slides(
     try:
         result = await controller.generate(payload)
     except EmptyInputError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.message) from exc
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.message,
+        ) from exc
     except TextTooLargeError as exc:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=exc.message) from exc
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=exc.message,
+        ) from exc
     return HTMLResponse(content=result.html)
 
 
@@ -73,7 +89,7 @@ async def preview_slides(
     summary="Render the deck and return it as a downloadable PDF document.",
 )
 async def download_pdf(
-    payload: GenerateSlidesRequest,
+    payload: GenerateSlidesRequestSchema,
     controller: SlideController = Depends(get_slide_controller),
 ) -> Response:
     """Render the deck to PDF and return it with the proper download headers.
@@ -91,11 +107,20 @@ async def download_pdf(
     try:
         pdf_bytes: bytes = await controller.generate_pdf(payload)
     except EmptyInputError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.message) from exc
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.message,
+        ) from exc
     except TextTooLargeError as exc:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=exc.message) from exc
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=exc.message,
+        ) from exc
     except PdfRenderError as exc:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=exc.message) from exc
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=exc.message,
+        ) from exc
     filename: str = "slides.pdf"
     return Response(
         content=pdf_bytes,

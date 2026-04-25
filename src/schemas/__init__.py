@@ -1,16 +1,16 @@
 from src.schemas.slide import (
-    BulletItem,
-    GenerateSlidesRequest,
-    GenerateSlidesResponse,
+    BulletItemSchema,
+    GenerateSlidesRequestSchema,
+    GenerateSlidesResponseSchema,
     SlideDeckSchema,
     SlideKind,
     SlideSchema,
 )
 
 __all__: list[str] = [
-    "BulletItem",
-    "GenerateSlidesRequest",
-    "GenerateSlidesResponse",
+    "BulletItemSchema",
+    "GenerateSlidesRequestSchema",
+    "GenerateSlidesResponseSchema",
     "SlideDeckSchema",
     "SlideKind",
     "SlideSchema",

@@ -1,13 +1,17 @@
 from src.schemas import (
-    GenerateSlidesRequest,
-    GenerateSlidesResponse,
+    GenerateSlidesRequestSchema,
+    GenerateSlidesResponseSchema,
     SlideDeckSchema,
 )
-from src.services import PdfRenderService, SlideHtmlService, SlideParserService
+from src.services import (
+    PdfRenderService,
+    SlideHtmlService,
+    SlideParserService,
+)
 
 
 class SlideController:
-    """Coordinates parsing, HTML rendering, and PDF generation for slide decks."""
+    """Coordinate parsing, HTML rendering, and PDF generation."""
 
     def __init__(
         self,
@@ -18,7 +22,7 @@ class SlideController:
         """Initialize the controller with its required services.
 
         Args:
-            parser_service: Service that converts text into a `SlideDeckSchema`.
+            parser_service: Service that converts text into a deck.
             html_service: Service that renders a deck as HTML.
             pdf_service: Service that converts HTML into a PDF.
         """
@@ -26,7 +30,10 @@ class SlideController:
         self._html: SlideHtmlService = html_service
         self._pdf: PdfRenderService = pdf_service
 
-    async def generate(self, request: GenerateSlidesRequest) -> GenerateSlidesResponse:
+    async def generate(
+        self,
+        request: GenerateSlidesRequestSchema,
+    ) -> GenerateSlidesResponseSchema:
         """Parse text into a deck and render it to HTML.
 
         Args:
@@ -36,12 +43,16 @@ class SlideController:
             The deck schema and rendered HTML wrapped in a response.
         """
         deck: SlideDeckSchema = await self._parser.parse(
-            text=request.text, deck_title=request.deck_title,
+            text=request.text,
+            deck_title=request.deck_title,
         )
         html: str = await self._html.render(deck=deck, theme=request.theme)
-        return GenerateSlidesResponse(deck=deck, html=html)
+        return GenerateSlidesResponseSchema(deck=deck, html=html)
 
-    async def generate_pdf(self, request: GenerateSlidesRequest) -> bytes:
+    async def generate_pdf(
+        self,
+        request: GenerateSlidesRequestSchema,
+    ) -> bytes:
         """Parse text, render to HTML, and convert the HTML to PDF.
 
         Args:
@@ -51,7 +62,8 @@ class SlideController:
             The PDF document as bytes.
         """
         deck: SlideDeckSchema = await self._parser.parse(
-            text=request.text, deck_title=request.deck_title,
+            text=request.text,
+            deck_title=request.deck_title,
         )
         html: str = await self._html.render(deck=deck, theme=request.theme)
         return await self._pdf.render(html=html)

@@ -16,7 +16,10 @@ def create_app() -> FastAPI:
     app: FastAPI = FastAPI(
         title=settings.app_name,
         version="0.1.0",
-        description="Generate HTML/PDF slide decks from structured pedagogical text.",
+        description=(
+            "Generate HTML/PDF slide decks from structured "
+            "pedagogical text."
+        ),
         debug=settings.debug,
     )
 

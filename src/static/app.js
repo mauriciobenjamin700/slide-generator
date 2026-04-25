@@ -44,6 +44,17 @@ const elements = {
     slideCount: document.getElementById("slide-count"),
 };
 
+let currentPreviewUrl = null;
+
+function setPreviewHtml(html) {
+    if (currentPreviewUrl) {
+        URL.revokeObjectURL(currentPreviewUrl);
+    }
+    const blob = new Blob([html], { type: "text/html" });
+    currentPreviewUrl = URL.createObjectURL(blob);
+    elements.iframe.src = currentPreviewUrl;
+}
+
 function setStatus(message, kind) {
     elements.status.textContent = message;
     elements.status.classList.remove("success", "error");
@@ -84,7 +95,7 @@ async function generatePreview() {
             throw new Error(error.detail || `HTTP ${response.status}`);
         }
         const data = await response.json();
-        elements.iframe.srcdoc = data.html;
+        setPreviewHtml(data.html);
         elements.previewEmpty.classList.add("hidden");
         elements.btnPdf.disabled = false;
         elements.slideCount.textContent = `${data.deck.slides.length} slides`;

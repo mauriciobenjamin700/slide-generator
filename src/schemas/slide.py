@@ -14,12 +14,15 @@ class SlideKind(str, Enum):
     CONCLUSION = "conclusion"
 
 
-class BulletItem(BaseModel):
+class BulletItemSchema(BaseModel):
     """A single bullet inside a `BULLETS` slide."""
 
     term: str | None = Field(
         default=None,
-        description="Optional highlighted term shown before the description (e.g. 'Porta NOT').",
+        description=(
+            "Optional highlighted term shown before the description "
+            "(e.g. 'Porta NOT')."
+        ),
     )
     description: str = Field(description="The bullet body text.")
 
@@ -31,19 +34,23 @@ class SlideSchema(BaseModel):
     title: str = Field(description="Main title shown at the top of the slide.")
     subtitle: str | None = Field(
         default=None,
-        description="Optional subtitle, used by lesson title and section slides.",
+        description=(
+            "Optional subtitle, used by lesson title and section slides."
+        ),
     )
     paragraphs: list[str] = Field(
         default_factory=list,
         description="Paragraph blocks rendered as body text.",
     )
-    bullets: list[BulletItem] = Field(
+    bullets: list[BulletItemSchema] = Field(
         default_factory=list,
         description="Bullet items rendered as a list. Used by BULLETS slides.",
     )
     lesson_index: int | None = Field(
         default=None,
-        description="The 1-based index of the parent lesson, used in slide footers.",
+        description=(
+            "The 1-based index of the parent lesson, used in slide footers."
+        ),
     )
     slide_number: int = Field(
         default=0,
@@ -54,7 +61,9 @@ class SlideSchema(BaseModel):
 class SlideDeckSchema(BaseModel):
     """The full ordered collection of slides produced from an input text."""
 
-    title: str = Field(description="Overall deck title, derived from the first lesson.")
+    title: str = Field(
+        description="Overall deck title, derived from the first lesson.",
+    )
     slides: list[SlideSchema]
 
     @property
@@ -67,7 +76,7 @@ class SlideDeckSchema(BaseModel):
         return len(self.slides)
 
 
-class GenerateSlidesRequest(BaseModel):
+class GenerateSlidesRequestSchema(BaseModel):
     """Payload accepted by the slide generation endpoint."""
 
     text: str = Field(
@@ -84,8 +93,10 @@ class GenerateSlidesRequest(BaseModel):
     )
 
 
-class GenerateSlidesResponse(BaseModel):
+class GenerateSlidesResponseSchema(BaseModel):
     """Response returned after parsing and rendering the slides as HTML."""
 
     deck: SlideDeckSchema
-    html: str = Field(description="The fully rendered HTML document for the slides.")
+    html: str = Field(
+        description="The fully rendered HTML document for the slides.",
+    )

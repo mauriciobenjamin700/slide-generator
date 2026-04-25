@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     max_text_length: int = 200_000
-    slide_theme: str = "default"
 
     base_dir: Path = Path(__file__).resolve().parent.parent
     templates_dir: Path = Path(__file__).resolve().parent.parent / "templates"
