@@ -14,6 +14,11 @@ LESSON_RE: re.Pattern[str] = re.compile(
     re.IGNORECASE,
 )
 
+NOTES_RE: re.Pattern[str] = re.compile(
+    r"^(?:Notas|Nota|Notes|Note)\s*:\s*(.+)$",
+    re.IGNORECASE,
+)
+
 JUNK_LINES: set[str] = {
     "shutterstock",
     "explorar",
@@ -61,7 +66,9 @@ class _Section:
 
     title: str
     paragraphs: list[str] = field(default_factory=list)
+    paragraph_notes: list[str | None] = field(default_factory=list)
     bullets: list[BulletItemSchema] = field(default_factory=list)
+    bullet_notes: list[str | None] = field(default_factory=list)
 
 
 @dataclass
@@ -143,51 +150,80 @@ def _looks_like_section(line: str) -> bool:
     return True
 
 
-def _chunk_paragraphs(paragraphs: list[str]) -> list[list[str]]:
+def _chunk_paragraphs(
+    paragraphs: list[str],
+    notes: list[str | None],
+) -> list[tuple[list[str], list[str | None]]]:
     """Split a list of paragraphs into slide-sized chunks.
 
     Args:
         paragraphs: The full list of paragraphs for a section.
+        notes: Per-paragraph notes parallel to ``paragraphs``.
 
     Returns:
-        A list of paragraph groups. Each group is small enough for one slide.
+        A list of (paragraph_chunk, note_chunk) pairs, each fitting on
+        one slide.
     """
-    chunks: list[list[str]] = []
+    chunks: list[tuple[list[str], list[str | None]]] = []
     current: list[str] = []
+    current_notes: list[str | None] = []
     current_chars: int = 0
-    for paragraph in paragraphs:
+    for paragraph, note in zip(paragraphs, notes, strict=False):
         paragraph_length: int = len(paragraph)
         if (
             current
             and current_chars + paragraph_length > MAX_CHARS_PER_CONTENT_SLIDE
         ):
-            chunks.append(current)
+            chunks.append((current, current_notes))
             current = []
+            current_notes = []
             current_chars = 0
         current.append(paragraph)
+        current_notes.append(note)
         current_chars += paragraph_length
     if current:
-        chunks.append(current)
+        chunks.append((current, current_notes))
     return chunks
 
 
 def _chunk_bullets(
     bullets: list[BulletItemSchema],
-) -> list[list[BulletItemSchema]]:
+    notes: list[str | None],
+) -> list[tuple[list[BulletItemSchema], list[str | None]]]:
     """Split a list of bullets into groups that fit on a single slide.
 
     Args:
         bullets: The full list of bullet items.
+        notes: Per-bullet notes parallel to ``bullets``.
 
     Returns:
-        A list of bullet groups, each at most `MAX_BULLETS_PER_SLIDE` long.
+        A list of (bullet_chunk, note_chunk) pairs, each at most
+        ``MAX_BULLETS_PER_SLIDE`` long.
     """
     if not bullets:
         return []
     return [
-        bullets[i : i + MAX_BULLETS_PER_SLIDE]
+        (
+            bullets[i : i + MAX_BULLETS_PER_SLIDE],
+            notes[i : i + MAX_BULLETS_PER_SLIDE],
+        )
         for i in range(0, len(bullets), MAX_BULLETS_PER_SLIDE)
     ]
+
+
+def _join_notes(notes: list[str | None]) -> str | None:
+    """Join non-empty notes into a single string separated by blank lines.
+
+    Args:
+        notes: A list of optional note strings, possibly with ``None``.
+
+    Returns:
+        The joined notes, or None when every entry is empty/None.
+    """
+    parts: list[str] = [n for n in notes if n]
+    if not parts:
+        return None
+    return "\n\n".join(parts)
 
 
 class SlideParserService:
@@ -240,10 +276,11 @@ class SlideParserService:
         current_lesson: _Lesson | None = None
         current_section: _Section | None = None
         paragraph_buffer: list[str] = []
+        last_added: str | None = None
 
         def flush_paragraph() -> None:
             """Flush the running paragraph buffer into the current section."""
-            nonlocal current_section
+            nonlocal current_section, last_added
             if not paragraph_buffer:
                 return
             if current_section is None and current_lesson is not None:
@@ -253,6 +290,8 @@ class SlideParserService:
                 current_section.paragraphs.append(
                     " ".join(paragraph_buffer).strip(),
                 )
+                current_section.paragraph_notes.append(None)
+                last_added = "paragraph"
             paragraph_buffer.clear()
 
         for raw in text.splitlines():
@@ -273,11 +312,42 @@ class SlideParserService:
                 )
                 current_section = None
                 lessons.append(current_lesson)
+                last_added = "lesson"
                 continue
 
             if current_lesson is None:
                 current_lesson = _Lesson(index=1, title="Conteúdo")
                 lessons.append(current_lesson)
+
+            notes_match: re.Match[str] | None = NOTES_RE.match(line)
+            if notes_match:
+                flush_paragraph()
+                note_text: str = notes_match.group(1).strip()
+                if (
+                    last_added == "paragraph"
+                    and current_section is not None
+                    and current_section.paragraph_notes
+                ):
+                    existing: str | None = (
+                        current_section.paragraph_notes[-1]
+                    )
+                    current_section.paragraph_notes[-1] = (
+                        f"{existing}\n{note_text}" if existing else note_text
+                    )
+                elif (
+                    last_added == "bullet"
+                    and current_section is not None
+                    and current_section.bullet_notes
+                ):
+                    existing_b: str | None = (
+                        current_section.bullet_notes[-1]
+                    )
+                    current_section.bullet_notes[-1] = (
+                        f"{existing_b}\n{note_text}"
+                        if existing_b
+                        else note_text
+                    )
+                continue
 
             bullet: tuple[str, str] | None = _try_parse_bullet(line)
             if bullet is not None:
@@ -288,12 +358,15 @@ class SlideParserService:
                 current_section.bullets.append(
                     BulletItemSchema(term=bullet[0], description=bullet[1]),
                 )
+                current_section.bullet_notes.append(None)
+                last_added = "bullet"
                 continue
 
             if _looks_like_section(line):
                 flush_paragraph()
                 current_section = _Section(title=line)
                 current_lesson.sections.append(current_section)
+                last_added = "section"
                 continue
 
             paragraph_buffer.append(line)
@@ -330,22 +403,32 @@ class SlideParserService:
                     if is_conclusion
                     else SlideKind.CONTENT
                 )
-                for paragraph_chunk in _chunk_paragraphs(section.paragraphs):
+                paragraph_pairs = _chunk_paragraphs(
+                    section.paragraphs,
+                    section.paragraph_notes,
+                )
+                for paragraph_chunk, note_chunk in paragraph_pairs:
                     slides.append(
                         SlideSchema(
                             kind=paragraph_kind,
                             title=section.title,
                             paragraphs=paragraph_chunk,
                             lesson_index=lesson.index,
+                            notes=_join_notes(note_chunk),
                         ),
                     )
-                for bullet_chunk in _chunk_bullets(section.bullets):
+                bullet_pairs = _chunk_bullets(
+                    section.bullets,
+                    section.bullet_notes,
+                )
+                for bullet_chunk, bullet_note_chunk in bullet_pairs:
                     slides.append(
                         SlideSchema(
                             kind=SlideKind.BULLETS,
                             title=section.title,
                             bullets=bullet_chunk,
                             lesson_index=lesson.index,
+                            notes=_join_notes(bullet_note_chunk),
                         ),
                     )
 

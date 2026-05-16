@@ -2,11 +2,16 @@ from functools import lru_cache
 
 from src.controllers import AnswerKeyController, SlideController
 from src.services import (
+    AnswerKeyDocxService,
     AnswerKeyHtmlService,
+    AnswerKeyMarkdownService,
     AnswerKeyParserService,
     PdfRenderService,
+    SlideDocxService,
     SlideHtmlService,
+    SlideMarkdownService,
     SlideParserService,
+    SlidePptxService,
 )
 
 
@@ -33,6 +38,9 @@ def get_slide_controller() -> SlideController:
         parser_service=SlideParserService(),
         html_service=SlideHtmlService(),
         pdf_service=get_pdf_service(),
+        pptx_service=SlidePptxService(),
+        docx_service=SlideDocxService(),
+        markdown_service=SlideMarkdownService(),
     )
 
 
@@ -49,4 +57,6 @@ def get_answer_key_controller() -> AnswerKeyController:
         parser_service=AnswerKeyParserService(),
         html_service=AnswerKeyHtmlService(),
         pdf_service=get_pdf_service(),
+        docx_service=AnswerKeyDocxService(),
+        markdown_service=AnswerKeyMarkdownService(),
     )

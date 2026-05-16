@@ -14,11 +14,16 @@ Pydantic v2, Jinja2 e WeasyPrint, seguindo arquitetura em camadas
   - **Cabeçalhos curtos** → títulos de seção dos slides
   - **Termo: descrição** → bullets agrupados em slides de lista
   - **Parágrafos** → slides de conteúdo (com quebra automática quando longos)
+  - **Notas: ...** → notas do apresentador (anexadas ao parágrafo ou bullet imediatamente acima)
   - **Conclusão da Unidade** → slide com estilo destacado
   - Linhas de ruído (Shutterstock, Explorar etc.) são descartadas
 - Pré-visualização HTML em iframe com tema claro/escuro
-- Exportação para PDF (1280×720, uma página por slide)
-- API REST: `/api/slides/generate`, `/api/slides/preview`, `/api/slides/pdf`
+- **Múltiplos formatos de exportação** a partir do mesmo texto:
+  - **PDF** (1280×720, uma página por slide)
+  - **PPTX** (PowerPoint 16:9, com notas no painel do apresentador)
+  - **DOCX handout** (1 slide por página com bloco "Notas do apresentador")
+  - **Markdown reveal.js** (`---` entre slides, `Note:` para notas)
+- API REST: `/api/slides/{generate,preview,pdf,pptx,docx,markdown}`
 
 ### Gabaritos
 
@@ -31,9 +36,11 @@ Pydantic v2, Jinja2 e WeasyPrint, seguindo arquitetura em camadas
   - Continuações em múltiplas linhas são juntadas automaticamente
 - HTML inline com CSS dedicado, suporta inline HTML (ex.:
   `<span class="overline">A</span>` para barra de inversão booleana)
-- Exportação para PDF A4 com codificação UTF-8 correta
-- API REST: `/api/answer-keys/generate`, `/api/answer-keys/preview`,
-  `/api/answer-keys/pdf`
+- **Múltiplos formatos de exportação**:
+  - **PDF** A4 com codificação UTF-8 correta
+  - **DOCX** editável (com inline HTML automaticamente convertido para texto plano)
+  - **Markdown** com cabeçalhos e blockquotes
+- API REST: `/api/answer-keys/{generate,preview,pdf,docx,markdown}`
 
 ### Interface
 
@@ -110,6 +117,18 @@ Mesmo payload, retorna apenas `text/html` para uso direto em iframe.
 
 Mesmo payload, retorna `application/pdf` com `Content-Disposition: attachment`.
 
+### POST `/api/slides/pptx`
+
+Mesmo payload, retorna `application/vnd.openxmlformats-officedocument.presentationml.presentation` com download de `slides.pptx` (16:9 widescreen, notas do apresentador no painel correspondente).
+
+### POST `/api/slides/docx`
+
+Mesmo payload, retorna `application/vnd.openxmlformats-officedocument.wordprocessingml.document` com download de `slides_handout.docx`. Layout em handout: um slide por página, bloco "Notas do apresentador" preenchido com as `Notas:` do texto ou linhas em branco para anotação manual.
+
+### POST `/api/slides/markdown`
+
+Mesmo payload, retorna `text/markdown; charset=utf-8` com download de `slides.md` no formato reveal.js (`---` entre slides, `Note:` para notas do apresentador).
+
 ### POST `/api/answer-keys/generate`
 
 Gera o JSON estruturado e o HTML completo do gabarito.
@@ -131,6 +150,17 @@ Mesmo payload, retorna apenas `text/html` para uso direto em iframe.
 
 Mesmo payload, retorna `application/pdf` com `Content-Disposition: attachment`
 (`gabarito.pdf`).
+
+### POST `/api/answer-keys/docx`
+
+Mesmo payload, retorna o gabarito como Word (`gabarito.docx`). Inline HTML
+(ex.: `<span class="overline">A</span>`) é convertido para texto plano.
+
+### POST `/api/answer-keys/markdown`
+
+Mesmo payload, retorna `text/markdown; charset=utf-8` com download de
+`gabarito.md` (cabeçalhos `##` por seção, perguntas em **negrito**, respostas
+em blockquote `>`).
 
 ## Testes
 
@@ -165,6 +195,7 @@ Heurísticas usadas:
 - Linhas que casam `Aula \d+:` viram slides de capa
 - Linhas curtas (≤ 90 caracteres), começando com maiúscula e sem terminação `.!,;:` viram títulos de seção (aceitam `?` para perguntas)
 - Linhas no formato `Termo: descrição` viram bullets se o termo tiver até 8 palavras, parênteses balanceados e nenhum verbo de ligação (é, são, foi…)
+- Linhas começando com `Notas:` (ou `Note:`/`Nota:`) anexam notas do apresentador ao parágrafo ou bullet imediatamente acima — visíveis no PPTX, no DOCX handout e no Markdown reveal.js, ocultas no PDF e na pré-visualização HTML
 - Demais linhas são tratadas como parágrafos
 
 ### Entrada de gabarito
@@ -241,6 +272,12 @@ REGRAS DE FORMATAÇÃO
 6. Não inclua numeração nas seções (nada de "1. Introdução"), nem cabeçalhos
    redundantes como "Tópico 1", "Resumo", "Sumário". Não inclua linhas de
    ruído como "Compartilhar", "Explorar", "Ver mais".
+
+7. (Opcional) Para anexar notas do apresentador a um parágrafo ou bullet,
+   use uma linha imediatamente após o conteúdo no formato:
+   Notas: texto da nota em uma única linha.
+   As notas aparecem no painel do PowerPoint, no DOCX handout e no Markdown
+   reveal.js, mas não na pré-visualização HTML nem no PDF.
 
 ESTRUTURA RECOMENDADA POR AULA
 

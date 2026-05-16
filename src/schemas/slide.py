@@ -56,6 +56,14 @@ class SlideSchema(BaseModel):
         default=0,
         description="The 1-based position of this slide in the deck.",
     )
+    notes: str | None = Field(
+        default=None,
+        description=(
+            "Optional speaker notes attached to this slide. Visible "
+            "in DOCX handouts, PPTX speaker notes pane and reveal.js "
+            "Markdown output."
+        ),
+    )
 
 
 class SlideDeckSchema(BaseModel):

@@ -313,6 +313,37 @@ html, body {
     background: var(--accent-soft);
 }
 
+.export {
+    display: inline-flex;
+    align-items: stretch;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--panel-soft);
+}
+
+.export__format {
+    border: none;
+    background: var(--panel-soft);
+    padding: 0 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+}
+
+.export__format:focus {
+    outline: 2px solid var(--accent-soft);
+    outline-offset: -2px;
+}
+
+.export .btn {
+    border-radius: 0;
+    padding: 10px 18px;
+}
+
 .status {
     font-size: 13px;
     color: var(--muted);
