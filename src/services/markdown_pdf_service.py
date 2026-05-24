@@ -3,6 +3,7 @@
 import asyncio
 import io
 import logging
+from pathlib import Path
 from typing import Optional
 
 import markdown
@@ -33,6 +34,7 @@ class MarkdownPdfService:
 		md_text: str,
 		title: Optional[str] = None,
 		render_mermaid: bool = False,
+		base_dir: Optional[Path] = None,
 	) -> bytes:
 		"""Convert Markdown text into PDF bytes.
 
@@ -46,6 +48,9 @@ class MarkdownPdfService:
 		    render_mermaid: If True, attempt to render ```mermaid blocks
 		        via Playwright. Requires the optional `playwright`
 		        dependency installed at runtime.
+		    base_dir: Optional filesystem directory used by WeasyPrint to
+		        resolve relative resource URLs (e.g. `<img src="img.png">`
+		        when the Markdown was extracted from a ZIP archive).
 
 		Returns:
 		    The generated PDF document as bytes.
@@ -55,7 +60,11 @@ class MarkdownPdfService:
 		"""
 		try:
 			return await asyncio.to_thread(
-				self._render_sync, md_text, title, render_mermaid
+				self._render_sync,
+				md_text,
+				title,
+				render_mermaid,
+				base_dir,
 			)
 		except Exception as exc:
 			raise PdfRenderError(
@@ -64,7 +73,10 @@ class MarkdownPdfService:
 
 	@staticmethod
 	def _render_sync(
-		md_text: str, title: Optional[str], render_mermaid: bool
+		md_text: str,
+		title: Optional[str],
+		render_mermaid: bool,
+		base_dir: Optional[Path],
 	) -> bytes:
 		"""Synchronously convert Markdown to PDF.
 
@@ -72,6 +84,7 @@ class MarkdownPdfService:
 		    md_text: The raw Markdown source.
 		    title: Optional document title.
 		    render_mermaid: Whether to attempt mermaid rendering.
+		    base_dir: Optional base directory for relative URL resolution.
 
 		Returns:
 		    PDF bytes.
@@ -98,5 +111,8 @@ class MarkdownPdfService:
 		)
 
 		buffer: io.BytesIO = io.BytesIO()
-		HTML(string=full_html).write_pdf(target=buffer)
+		base_url: Optional[str] = (
+			str(base_dir) if base_dir is not None else None
+		)
+		HTML(string=full_html, base_url=base_url).write_pdf(target=buffer)
 		return buffer.getvalue()
