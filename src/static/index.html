@@ -49,7 +49,15 @@
             ></textarea>
             <div class="panel__footer">
                 <button id="slides-btn-preview" class="btn btn--primary" type="button">Gerar pré-visualização</button>
-                <button id="slides-btn-pdf" class="btn btn--accent" type="button" disabled>Baixar PDF</button>
+                <div class="export">
+                    <select id="slides-format" class="export__format">
+                        <option value="pdf">PDF</option>
+                        <option value="pptx">PowerPoint (.pptx)</option>
+                        <option value="docx">Word handout (.docx)</option>
+                        <option value="markdown">Markdown (reveal.js)</option>
+                    </select>
+                    <button id="slides-btn-download" class="btn btn--accent" type="button" disabled>Baixar</button>
+                </div>
                 <button id="slides-btn-sample" class="btn btn--ghost btn--ghost-light" type="button">Exemplo</button>
                 <span id="slides-status" class="status"></span>
             </div>
@@ -100,7 +108,14 @@
             ></textarea>
             <div class="panel__footer">
                 <button id="ak-btn-preview" class="btn btn--primary" type="button">Gerar pré-visualização</button>
-                <button id="ak-btn-pdf" class="btn btn--accent" type="button" disabled>Baixar PDF</button>
+                <div class="export">
+                    <select id="ak-format" class="export__format">
+                        <option value="pdf">PDF</option>
+                        <option value="docx">Word (.docx)</option>
+                        <option value="markdown">Markdown</option>
+                    </select>
+                    <button id="ak-btn-download" class="btn btn--accent" type="button" disabled>Baixar</button>
+                </div>
                 <button id="ak-btn-sample" class="btn btn--ghost btn--ghost-light" type="button">Exemplo</button>
                 <span id="ak-status" class="status"></span>
             </div>

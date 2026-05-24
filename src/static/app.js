@@ -2,6 +2,8 @@ const SLIDES_SAMPLE = `Aula 1: Fundamentos da Lógica Digital e Portas Lógicas
 Introdução ao Pensamento Binário
 A eletrônica digital baseia-se na ideia de que toda informação pode ser representada por apenas dois estados: Ligado (1) ou Desligado (0). No nível do hardware, esses estados são representados por níveis de tensão (geralmente 0V para o nível baixo e 5V ou 3.3V para o nível alto). Diferente da eletrônica analógica, onde a tensão varia continuamente, a digital ignora pequenas variações, o que torna os sistemas muito mais imunes a ruídos.
 
+Notas: Reforçar a importância da imunidade a ruído com um exemplo prático de um sinal degradado.
+
 As Portas Lógicas Fundamentais
 As portas lógicas são os "tijolos" de qualquer processador ou circuito digital. Elas recebem sinais de entrada, processam de acordo com uma regra lógica e entregam um resultado.
 
@@ -10,6 +12,8 @@ Porta NOT (Inversora): É a mais simples. Se entrar 0, sai 1. Se entrar 1, sai 0
 Porta AND (E): Imagine um circuito com dois interruptores em série. A lâmpada só acende se o primeiro E o segundo estiverem fechados. Na eletrônica, a saída só é nível alto se todas as entradas forem nível alto.
 
 Porta OR (OU): Funciona como dois interruptores em paralelo. A lâmpada acende se o primeiro OU o segundo (ou ambos) estiverem fechados. Basta uma entrada ser 1 para a saída ser 1.
+
+Notas: Desenhar a tabela verdade no quadro antes de avançar.
 
 Conclusão da Unidade
 Ao final destas três aulas, o aluno deve ser capaz de entender que um sensor capta uma informação, o conversor traduz essa informação para o "idioma" do computador, e as portas lógicas tomam decisões baseadas nesses dados.`;
@@ -35,6 +39,27 @@ R: ADC (Analog-to-Digital Converter) é o conversor analógico-digital. Ele perm
 
 5. Se um ADC de 10 bits possui referência de 5V, qual é o valor aproximado da sua resolução?
 R: Resolução = 5V / (2^10) = 5V / 1024 ≈ 4,88 mV.`;
+
+const FORMAT_FILENAMES = {
+    slides: {
+        pdf: "slides.pdf",
+        pptx: "slides.pptx",
+        docx: "slides_handout.docx",
+        markdown: "slides.md",
+    },
+    "answer-key": {
+        pdf: "gabarito.pdf",
+        docx: "gabarito.docx",
+        markdown: "gabarito.md",
+    },
+};
+
+const FORMAT_LABELS = {
+    pdf: "PDF",
+    pptx: "PowerPoint",
+    docx: "Word",
+    markdown: "Markdown",
+};
 
 function setStatus(node, message, kind) {
     node.textContent = message;
@@ -98,8 +123,9 @@ function setupSlides() {
         input: document.getElementById("slides-input"),
         deckTitle: document.getElementById("deck-title"),
         theme: document.getElementById("slides-theme"),
+        format: document.getElementById("slides-format"),
         btnPreview: document.getElementById("slides-btn-preview"),
-        btnPdf: document.getElementById("slides-btn-pdf"),
+        btnDownload: document.getElementById("slides-btn-download"),
         btnSample: document.getElementById("slides-btn-sample"),
         iframe: document.getElementById("slides-iframe"),
         empty: document.getElementById("slides-empty"),
@@ -129,7 +155,7 @@ function setupSlides() {
             const data = await response.json();
             setHtml(data.html);
             els.empty.classList.add("hidden");
-            els.btnPdf.disabled = false;
+            els.btnDownload.disabled = false;
             els.slideCount.textContent = `${data.deck.slides.length} slides`;
             setStatus(els.status, `Deck "${data.deck.title}" gerado com sucesso.`, "success");
         } catch (error) {
@@ -139,27 +165,29 @@ function setupSlides() {
         }
     }
 
-    async function downloadPdf() {
+    async function downloadFormat() {
         if (!els.input.value.trim()) {
             setStatus(els.status, "Cole algum texto antes de gerar.", "error");
             return;
         }
-        setStatus(els.status, "Gerando PDF...");
-        els.btnPdf.disabled = true;
+        const format = els.format.value;
+        const label = FORMAT_LABELS[format] || format;
+        setStatus(els.status, `Gerando ${label}...`);
+        els.btnDownload.disabled = true;
         try {
-            const response = await postJson("/api/slides/pdf", buildPayload());
+            const response = await postJson(`/api/slides/${format}`, buildPayload());
             const blob = await response.blob();
-            downloadBlob(blob, "slides.pdf");
-            setStatus(els.status, "PDF gerado e baixado.", "success");
+            downloadBlob(blob, FORMAT_FILENAMES.slides[format]);
+            setStatus(els.status, `${label} gerado e baixado.`, "success");
         } catch (error) {
             setStatus(els.status, error.message || String(error), "error");
         } finally {
-            els.btnPdf.disabled = false;
+            els.btnDownload.disabled = false;
         }
     }
 
     els.btnPreview.addEventListener("click", generate);
-    els.btnPdf.addEventListener("click", downloadPdf);
+    els.btnDownload.addEventListener("click", downloadFormat);
     els.btnSample.addEventListener("click", () => {
         els.input.value = SLIDES_SAMPLE;
         updateCharCount(els.input, els.charCount);
@@ -167,7 +195,7 @@ function setupSlides() {
     });
     els.input.addEventListener("input", () => updateCharCount(els.input, els.charCount));
     els.theme.addEventListener("change", () => {
-        if (!els.btnPdf.disabled) {
+        if (!els.btnDownload.disabled) {
             generate();
         }
     });
@@ -180,8 +208,9 @@ function setupAnswerKey() {
         title: document.getElementById("ak-title"),
         subtitle: document.getElementById("ak-subtitle"),
         theme: document.getElementById("ak-theme"),
+        format: document.getElementById("ak-format"),
         btnPreview: document.getElementById("ak-btn-preview"),
-        btnPdf: document.getElementById("ak-btn-pdf"),
+        btnDownload: document.getElementById("ak-btn-download"),
         btnSample: document.getElementById("ak-btn-sample"),
         iframe: document.getElementById("ak-iframe"),
         empty: document.getElementById("ak-empty"),
@@ -216,7 +245,7 @@ function setupAnswerKey() {
             const data = await response.json();
             setHtml(data.html);
             els.empty.classList.add("hidden");
-            els.btnPdf.disabled = false;
+            els.btnDownload.disabled = false;
             const total = totalItems(data.answer_key);
             const sections = data.answer_key.sections.length;
             els.itemCount.textContent = `${total} questões em ${sections} seção(ões)`;
@@ -228,27 +257,29 @@ function setupAnswerKey() {
         }
     }
 
-    async function downloadPdf() {
+    async function downloadFormat() {
         if (!els.input.value.trim()) {
             setStatus(els.status, "Cole algum texto antes de gerar.", "error");
             return;
         }
-        setStatus(els.status, "Gerando PDF...");
-        els.btnPdf.disabled = true;
+        const format = els.format.value;
+        const label = FORMAT_LABELS[format] || format;
+        setStatus(els.status, `Gerando ${label}...`);
+        els.btnDownload.disabled = true;
         try {
-            const response = await postJson("/api/answer-keys/pdf", buildPayload());
+            const response = await postJson(`/api/answer-keys/${format}`, buildPayload());
             const blob = await response.blob();
-            downloadBlob(blob, "gabarito.pdf");
-            setStatus(els.status, "PDF gerado e baixado.", "success");
+            downloadBlob(blob, FORMAT_FILENAMES["answer-key"][format]);
+            setStatus(els.status, `${label} gerado e baixado.`, "success");
         } catch (error) {
             setStatus(els.status, error.message || String(error), "error");
         } finally {
-            els.btnPdf.disabled = false;
+            els.btnDownload.disabled = false;
         }
     }
 
     els.btnPreview.addEventListener("click", generate);
-    els.btnPdf.addEventListener("click", downloadPdf);
+    els.btnDownload.addEventListener("click", downloadFormat);
     els.btnSample.addEventListener("click", () => {
         els.input.value = ANSWER_KEY_SAMPLE;
         updateCharCount(els.input, els.charCount);
@@ -256,7 +287,7 @@ function setupAnswerKey() {
     });
     els.input.addEventListener("input", () => updateCharCount(els.input, els.charCount));
     els.theme.addEventListener("change", () => {
-        if (!els.btnPdf.disabled) {
+        if (!els.btnDownload.disabled) {
             generate();
         }
     });

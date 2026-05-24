@@ -1,11 +1,11 @@
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from src.core import settings
-from src.schemas import AnswerKeySchema
+from src.schemas import SlideDeckSchema
 
 
-class AnswerKeyHtmlService:
-	"""Renders an `AnswerKeySchema` into a complete HTML document."""
+class SlideHtmlService:
+	"""Renders a `SlideDeckSchema` into the final HTML document."""
 
 	def __init__(self) -> None:
 		"""Initialize the Jinja2 environment for the templates dir."""
@@ -16,27 +16,28 @@ class AnswerKeyHtmlService:
 			lstrip_blocks=True,
 		)
 		self._styles: str = (
-			settings.templates_dir / "answer_key_styles.css"
-		).read_text(encoding="utf-8")
+			settings.templates_dir / "slide_styles.css"
+		).read_text(
+			encoding="utf-8",
+		)
 
 	async def render(
 		self,
-		answer_key: AnswerKeySchema,
+		deck: SlideDeckSchema,
 		theme: str = "default",
 	) -> str:
-		"""Render an answer key into a standalone HTML document.
+		"""Render a slide deck to a complete HTML document.
 
 		Args:
-		    answer_key: The parsed answer key to render.
+		    deck: The parsed slide deck.
 		    theme: The visual theme to apply. Either "default" or "dark".
 
 		Returns:
-		    A standalone HTML string with inline CSS, ready for the
-		    browser preview or for the PDF renderer.
+		    A standalone HTML string containing inline CSS and all slides.
 		"""
-		template = self._env.get_template("answer_key.html")
+		template = self._env.get_template("slides.html")
 		return template.render(
-			answer_key=answer_key,
+			deck=deck,
 			theme=theme,
-			answer_key_styles=self._styles,
+			slide_styles=self._styles,
 		)
