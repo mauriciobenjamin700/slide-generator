@@ -1,16 +1,17 @@
-from src.core.config import Settings, settings
 from src.core.exceptions import (
-    EmptyInputError,
-    PdfRenderError,
-    SlideGeneratorError,
-    TextTooLargeError,
+	EmptyInputError,
+	PdfRenderError,
+	SlideGeneratorError,
+	TextTooLargeError,
 )
+from src.core.settings import Settings, get_settings, settings
 
 __all__: list[str] = [
-    "Settings",
-    "settings",
-    "EmptyInputError",
-    "PdfRenderError",
-    "SlideGeneratorError",
-    "TextTooLargeError",
+	"Settings",
+	"get_settings",
+	"settings",
+	"EmptyInputError",
+	"PdfRenderError",
+	"SlideGeneratorError",
+	"TextTooLargeError",
 ]

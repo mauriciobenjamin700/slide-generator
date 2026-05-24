@@ -1,17 +1,7 @@
-import uvicorn
+"""Uvicorn entrypoint for the slide-generator service."""
 
-from src.core import settings
-
-
-def main() -> None:
-    """Run the slide generator API with uvicorn."""
-    uvicorn.run(
-        "src.api.app:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.debug,
-    )
+from src.server import run
 
 
 if __name__ == "__main__":
-    main()
+	run()
